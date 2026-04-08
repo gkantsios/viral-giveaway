@@ -1,0 +1,141 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String?
+  emailVerified Boolean   @default(false)
+  name          String?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  giveaways      Giveaway[]
+  espConnections EspConnection[]
+  accounts       Account[]
+  sessions       Session[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Giveaway {
+  id          String         @id @default(cuid())
+  userId      String
+  title       String
+  description String?        @db.Text
+  prize       String
+  slug        String         @unique
+  rules       String?        @db.Text
+  status      GiveawayStatus @default(DRAFT)
+  startDate   DateTime?
+  endDate     DateTime?
+  winnerId    String?        @unique
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries Entry[]
+  winner  Entry?  @relation("GiveawayWinner", fields: [winnerId], references: [id])
+
+  @@map("giveaways")
+}
+
+enum GiveawayStatus {
+  DRAFT
+  PUBLISHED
+  ENDED
+}
+
+model Entry {
+  id            String   @id @default(cuid())
+  giveawayId    String
+  email         String
+  referralCode  String   @unique @default(cuid())
+  referredById  String?
+  bonusEntries  Int      @default(0)
+  totalEntries  Int      @default(1)
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  giveaway   Giveaway  @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
+  referredBy Entry?    @relation("EntryReferrals", fields: [referredById], references: [id])
+  referrals  Entry[]   @relation("EntryReferrals")
+  wonGiveaway Giveaway? @relation("GiveawayWinner")
+
+  @@unique([giveawayId, email])
+  @@map("entries")
+}
+
+model EspConnection {
+  id           String      @id @default(cuid())
+  userId       String
+  provider     EspProvider
+  accessToken  String      @db.Text
+  refreshToken String?     @db.Text
+  listId       String?
+  settings     Json        @default("{}")
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@map("esp_connections")
+}
+
+enum EspProvider {
+  MAILCHIMP
+  CONVERTKIT
+  ACTIVECAMPAIGN
+}
