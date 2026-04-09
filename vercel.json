@@ -1,18 +1,5 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
-  "framework": "nextjs",
-  "nodeVersion": "18.x",
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "NEXTAUTH_SECRET": "@nextauth_secret",
-    "NEXTAUTH_URL": "@nextauth_url",
-    "RESEND_API_KEY": "@resend_api_key"
-  },
-  "functions": {
-    "api/**/*.ts": {
-      "memory": 512,
-      "maxDuration": 30
-    }
-  }
+  "framework": "nextjs"
 }
