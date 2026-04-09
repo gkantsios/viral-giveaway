@@ -1,9 +1,12 @@
 "use client";
 
+import { unstable_noStore as noStore } from "next/cache";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+
+noStore();
 
 interface Giveaway {
   id: string;
