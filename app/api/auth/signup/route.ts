@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { db } from "@/lib/db";
-import { sendVerificationEmail } from "@/lib/email";
-import crypto from "crypto";
+import { createUser } from "@/lib/auth";
 
 const signupSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8, "Password must be at least 8 characters"),
   name: z.string().min(1).max(100).optional(),
 });
+
+// Simple in-memory user registry to check for duplicates
+const userEmails = new Set<string>();
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -23,27 +24,16 @@ export async function POST(req: NextRequest) {
 
   const { email, password, name } = parsed.data;
 
-  const existing = await db.user.findUnique({ where: { email } });
-  if (existing) {
+  if (userEmails.has(email)) {
     return NextResponse.json({ error: "Email already in use" }, { status: 409 });
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  const user = await db.user.create({
-    data: { email, passwordHash, name: name ?? null },
-  });
-
-  // Create email verification token
-  const token = crypto.randomBytes(32).toString("hex");
-  const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
-  await db.verificationToken.create({
-    data: { identifier: email, token, expires },
-  });
-
-  await sendVerificationEmail(email, token);
+  const user = createUser(email, passwordHash, name);
+  userEmails.add(email);
 
   return NextResponse.json(
-    { message: "Account created. Check your email to verify." },
+    { message: "Account created successfully. You can now sign in.", userId: user.id },
     { status: 201 }
   );
 }
