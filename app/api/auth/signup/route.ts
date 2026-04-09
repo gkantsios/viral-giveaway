@@ -9,22 +9,25 @@ const signupSchema = z.object({
   name: z.string().min(1).max(100).optional(),
 });
 
-// In-memory user storage
-interface User {
-  id: string;
-  email: string;
-  passwordHash: string;
-  name: string | null;
+// Use global in-memory user storage (shared with auth route)
+declare global {
+  var authUsers: Map<string, {
+    id: string;
+    email: string;
+    passwordHash: string;
+    name: string | null;
+  }>;
+  var authEmails: Set<string>;
 }
 
-const users = new Map<string, User>();
-const userEmails = new Set<string>();
+if (!global.authUsers) global.authUsers = new Map();
+if (!global.authEmails) global.authEmails = new Set();
 
-function createUser(email: string, passwordHash: string, name?: string): User {
+function createUser(email: string, passwordHash: string, name?: string) {
   const id = crypto.randomUUID();
-  const user: User = { id, email, passwordHash, name: name || null };
-  users.set(id, user);
-  userEmails.add(email);
+  const user = { id, email, passwordHash, name: name || null };
+  global.authUsers.set(id, user);
+  global.authEmails.add(email);
   return user;
 }
 
@@ -41,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     const { email, password, name } = parsed.data;
 
-    if (userEmails.has(email)) {
+    if (global.authEmails.has(email)) {
       return NextResponse.json({ error: "Email already in use" }, { status: 409 });
     }
 
