@@ -2,29 +2,12 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { db } from "@/lib/db";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
 });
-
-// In-memory user storage (shared with signup)
-declare global {
-  var authUsers: Map<string, {
-    id: string;
-    email: string;
-    passwordHash: string;
-    name: string | null;
-  }>;
-  var authEmails: Set<string>;
-}
-
-if (!global.authUsers) global.authUsers = new Map();
-if (!global.authEmails) global.authEmails = new Set();
-
-function findUserByEmail(email: string) {
-  return Array.from(global.authUsers.values()).find((u) => u.email === email);
-}
 
 const { handlers: { GET, POST } } = NextAuth({
   session: { strategy: "jwt" },
@@ -44,7 +27,10 @@ const { handlers: { GET, POST } } = NextAuth({
         if (!parsed.success) return null;
 
         const { email, password } = parsed.data;
-        const user = findUserByEmail(email);
+        const user = await db.user.findUnique({
+          where: { email },
+        });
+
         if (!user || !user.passwordHash) return null;
 
         const valid = await bcrypt.compare(password, user.passwordHash);
