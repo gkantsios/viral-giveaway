@@ -28,7 +28,7 @@ export async function GET(
     db.entry.findMany({
       where: {
         giveawayId: params.id,
-        ...(q ? { email: { contains: q, mode: "insensitive" } } : {}),
+        ...(q ? { email: { contains: q } } : {}),
       },
       orderBy: { createdAt: "desc" },
       skip,
@@ -37,7 +37,7 @@ export async function GET(
     db.entry.count({
       where: {
         giveawayId: params.id,
-        ...(q ? { email: { contains: q, mode: "insensitive" } } : {}),
+        ...(q ? { email: { contains: q } } : {}),
       },
     }),
   ]);

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
-import { EspProvider } from "@prisma/client";
 
 const addSchema = z.object({
   provider: z.enum(["MAILCHIMP", "CONVERTKIT", "ACTIVECAMPAIGN"]),
@@ -50,11 +49,11 @@ export async function POST(req: NextRequest) {
 
   const connection = await db.espConnection.upsert({
     where: {
-      userId_provider: { userId: session.user.id, provider: provider as EspProvider },
+      userId_provider: { userId: session.user.id, provider },
     },
     create: {
       userId: session.user.id,
-      provider: provider as EspProvider,
+      provider,
       accessToken,
       listId: listId ?? null,
     },

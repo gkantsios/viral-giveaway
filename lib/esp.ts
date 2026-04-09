@@ -1,7 +1,5 @@
-import { EspProvider } from "@prisma/client";
-
 interface SyncSubscriberParams {
-  provider: EspProvider;
+  provider: "MAILCHIMP" | "CONVERTKIT" | "ACTIVECAMPAIGN";
   accessToken: string;
   listId: string | null;
   email: string;
