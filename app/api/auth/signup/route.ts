@@ -45,7 +45,17 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Signup error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Signup error:", errorMessage);
+
+    // Provide more specific error messages for debugging
+    if (errorMessage.includes("Connection refused") || errorMessage.includes("ECONNREFUSED")) {
+      return NextResponse.json(
+        { error: "Database connection failed. Please check database configuration." },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
