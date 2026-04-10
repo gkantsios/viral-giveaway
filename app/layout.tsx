@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SessionProvider } from "next-auth/react";
 import "./globals.css";
+import "@/lib/init-db";
 
 export const metadata: Metadata = {
   title: "HapGiveaway — Viral Giveaways That Grow Your Email List",
